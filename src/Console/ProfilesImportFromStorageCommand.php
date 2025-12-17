@@ -47,7 +47,7 @@ final class ProfilesImportFromStorageCommand extends Command
 
             $files = scandir($path) ?: [];
             foreach ($files as $f) {
-                if ($f === '.' || $f === '..') {
+                if ($f === '.' || $f === '..' || $f === '.gitignore') {
                     continue;
                 }
                 $full = $path . '/' . $f;
