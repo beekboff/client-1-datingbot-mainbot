@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3e8970e61f4748d09eca939bb6857664",
+    "content-hash": "dc250495a74bbbed2f57b164c45b18d1",
     "packages": [
         {
             "name": "alexkart/curl-builder",
@@ -2755,6 +2755,89 @@
                 }
             ],
             "time": "2024-03-21T07:18:22+00:00"
+        },
+        {
+            "name": "yiisoft/db-migration",
+            "version": "1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/yiisoft/db-migration.git",
+                "reference": "8872c58cf9c3a001054d2d30933d0e914b597ddf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/yiisoft/db-migration/zipball/8872c58cf9c3a001054d2d30933d0e914b597ddf",
+                "reference": "8872c58cf9c3a001054d2d30933d0e914b597ddf",
+                "shasum": ""
+            },
+            "require": {
+                "ext-filter": "*",
+                "php": "^8.1",
+                "symfony/console": "^6.0|^7.0",
+                "yiisoft/db": "^1.3",
+                "yiisoft/injector": "^1.2"
+            },
+            "require-dev": {
+                "maglnet/composer-require-checker": "^4.4",
+                "phpunit/phpunit": "^10.5",
+                "rector/rector": "^1.0",
+                "roave/infection-static-analysis-plugin": "^1.35",
+                "spatie/phpunit-watcher": "^1.23",
+                "vimeo/psalm": "^5.25",
+                "yiisoft/db-sqlite": "^1.1",
+                "yiisoft/di": "^1.2",
+                "yiisoft/files": "^2.0",
+                "yiisoft/test-support": "^3.0",
+                "yiisoft/yii-console": "^2.0"
+            },
+            "bin": [
+                "bin/yii-db-migration"
+            ],
+            "type": "library",
+            "extra": {
+                "config-plugin": {
+                    "params": "params.php",
+                    "di-console": "di-console.php"
+                },
+                "config-plugin-options": {
+                    "source-directory": "config"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Yiisoft\\Db\\Migration\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "Yii DB Migration",
+            "homepage": "https://www.yiiframework.com/",
+            "keywords": [
+                "db",
+                "migration",
+                "yii"
+            ],
+            "support": {
+                "chat": "https://t.me/yii3en",
+                "forum": "https://www.yiiframework.com/forum/",
+                "irc": "ircs://irc.libera.chat:6697/yii",
+                "issues": "https://github.com/yiisoft/db-migration/issues?state=open",
+                "source": "https://github.com/yiisoft/db-migration",
+                "wiki": "https://www.yiiframework.com/wiki/"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/yiisoft",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/yiisoft",
+                    "type": "opencollective"
+                }
+            ],
+            "time": "2024-11-27T11:29:43+00:00"
         },
         {
             "name": "yiisoft/db-mysql",
@@ -13346,94 +13429,11 @@
                 "source": "https://github.com/webmozarts/assert/tree/1.12.1"
             },
             "time": "2025-10-29T15:56:20+00:00"
-        },
-        {
-            "name": "yiisoft/db-migration",
-            "version": "1.2.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/yiisoft/db-migration.git",
-                "reference": "8872c58cf9c3a001054d2d30933d0e914b597ddf"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/db-migration/zipball/8872c58cf9c3a001054d2d30933d0e914b597ddf",
-                "reference": "8872c58cf9c3a001054d2d30933d0e914b597ddf",
-                "shasum": ""
-            },
-            "require": {
-                "ext-filter": "*",
-                "php": "^8.1",
-                "symfony/console": "^6.0|^7.0",
-                "yiisoft/db": "^1.3",
-                "yiisoft/injector": "^1.2"
-            },
-            "require-dev": {
-                "maglnet/composer-require-checker": "^4.4",
-                "phpunit/phpunit": "^10.5",
-                "rector/rector": "^1.0",
-                "roave/infection-static-analysis-plugin": "^1.35",
-                "spatie/phpunit-watcher": "^1.23",
-                "vimeo/psalm": "^5.25",
-                "yiisoft/db-sqlite": "^1.1",
-                "yiisoft/di": "^1.2",
-                "yiisoft/files": "^2.0",
-                "yiisoft/test-support": "^3.0",
-                "yiisoft/yii-console": "^2.0"
-            },
-            "bin": [
-                "bin/yii-db-migration"
-            ],
-            "type": "library",
-            "extra": {
-                "config-plugin": {
-                    "params": "params.php",
-                    "di-console": "di-console.php"
-                },
-                "config-plugin-options": {
-                    "source-directory": "config"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Yiisoft\\Db\\Migration\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": "Yii DB Migration",
-            "homepage": "https://www.yiiframework.com/",
-            "keywords": [
-                "db",
-                "migration",
-                "yii"
-            ],
-            "support": {
-                "chat": "https://t.me/yii3en",
-                "forum": "https://www.yiiframework.com/forum/",
-                "irc": "ircs://irc.libera.chat:6697/yii",
-                "issues": "https://github.com/yiisoft/db-migration/issues?state=open",
-                "source": "https://github.com/yiisoft/db-migration",
-                "wiki": "https://www.yiiframework.com/wiki/"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/sponsors/yiisoft",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/yiisoft",
-                    "type": "opencollective"
-                }
-            ],
-            "time": "2024-11-27T11:29:43+00:00"
         }
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
@@ -13441,6 +13441,6 @@
         "ext-filter": "*",
         "ext-json": "*"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }
