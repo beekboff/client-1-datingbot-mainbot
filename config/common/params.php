@@ -15,17 +15,9 @@ return [
         'default' => 'en',
         'supported' => ['en', 'ru', 'es'],
     ],
-    'rabbitmq' => [
-        'host' => '127.0.0.1',
-        'port' => 5672,
-        'user' => 'guest',
-        'pass' => 'guest',
-        'vhost' => '/',
-    ],
-    'telegram' => [
-        'token' => '',
-        'base_url' => 'https://api.telegram.org',
-    ],
+    // Note: rabbitmq/telegram/db are intentionally not set here in order to avoid
+    // duplicate-key conflicts with params-local.php on production. Provide them
+    // in config/common/params-local.php or in environment-specific params.
     // Yii DB Migration settings: make migrations work without extra flags
     'yiisoft/db-migration' => [
         // Use namespaced migrations under App\\Migrations (mapped to ./migrations via composer.json)
@@ -37,11 +29,7 @@ return [
         'newMigrationPath' => '',
         'sourcePaths' => [],
     ],
-    'db' => [
-        'dsn' => 'mysql:host=127.0.0.1;dbname=dating_bot;charset=utf8mb4',
-        'user' => 'root',
-        'pass' => 'verysecret',
-    ],
+    // 'db' moved to params-local.php or env-specific files; DI has safe defaults.
     'app' => [
         'profileCreateUrl' => 'https://www.znakomstva-chat-bot.com/1cd89232-cbdc-4795-b3fb-620e8340d3a8',
         // Public base URL of this bot service (used to compose image URLs for profiles in /storage)

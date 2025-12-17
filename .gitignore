@@ -26,3 +26,6 @@ Thumbs.db
 c3.php
 
 .env
+
+# local params overrides (do not commit secrets)
+config/**/params-local.php
