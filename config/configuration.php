@@ -7,7 +7,10 @@ use App\Environment;
 // NOTE: After making changes in this file, run `composer yii-config-rebuild` to update the merge plan.
 return [
     'config-plugin' => [
-        'params' => 'common/params.php',
+        'params' => [
+            'common/params.php',
+            '?common/params-local.php',
+        ],
         'params-web' => [
             '$params',
             'web/params.php',
@@ -40,16 +43,19 @@ return [
         Environment::DEV => [
             'params' => [
                 'environments/dev/params.php',
+                '?environments/dev/params-local.php',
             ],
         ],
         Environment::TEST => [
             'params' => [
                 'environments/test/params.php',
+                '?environments/test/params-local.php',
             ],
         ],
         Environment::PROD => [
             'params' => [
                 'environments/prod/params.php',
+                '?environments/prod/params-local.php',
             ],
         ],
     ],

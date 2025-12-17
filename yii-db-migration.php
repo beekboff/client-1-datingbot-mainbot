@@ -9,10 +9,23 @@ use Yiisoft\Db\Mysql\Driver;
 
 $rootPath = __DIR__;
 
-// You can override via env vars DB_DSN, DB_USER, DB_PASS
-$dsn = getenv('DB_DSN') ?: 'mysql:host=127.0.0.1;dbname=dating_bot;charset=utf8mb4';
-$user = getenv('DB_USER') ?: 'root';
-$pass = getenv('DB_PASS') ?: '';
+// Prefer params (with optional params-local) for DB configuration instead of .env
+$params = [];
+$commonParams = $rootPath . '/config/common/params.php';
+$commonParamsLocal = $rootPath . '/config/common/params-local.php';
+if (is_file($commonParams)) {
+    /** @var array $params */
+    $params = require $commonParams;
+    if (is_file($commonParamsLocal)) {
+        /** @var array $local */
+        $local = require $commonParamsLocal;
+        $params = array_replace_recursive($params, $local);
+    }
+}
+
+$dsn = $params['db']['dsn'] ?? 'mysql:host=127.0.0.1;dbname=dating_bot;charset=utf8mb4';
+$user = $params['db']['user'] ?? 'root';
+$pass = $params['db']['pass'] ?? '';
 
 return [
     'db' => new Connection(new Driver($dsn, $user, $pass), new SchemaCache(new ArrayCache())),

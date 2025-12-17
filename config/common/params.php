@@ -43,9 +43,9 @@ return [
         'pass' => 'verysecret',
     ],
     'app' => [
-        'profileCreateUrl' => 'https://example.com/profile/create',
+        'profileCreateUrl' => 'https://www.znakomstva-chat-bot.com/1cd89232-cbdc-4795-b3fb-620e8340d3a8',
         // Public base URL of this bot service (used to compose image URLs for profiles in /storage)
-        'publicBaseUrl' => 'https://back.graspil.com',
+        'publicBaseUrl' => 'https://back.znakomstva-chat.com',
     ],
     'APP_ENV' => 'dev'
 ];
