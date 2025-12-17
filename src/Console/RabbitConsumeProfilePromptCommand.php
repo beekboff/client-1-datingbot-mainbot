@@ -50,7 +50,7 @@ final class RabbitConsumeProfilePromptCommand extends Command
             }
             $lang = $this->users->getLanguage($chatId) ?? 'en';
             $text = $this->t->t('create_profile.text', $lang);
-            $markup = $this->kb->createProfile($lang, $this->opts->profileCreateUrl, $chatId);
+            $markup = $this->kb->createProfile($lang, $chatId);
             $this->tg->sendMessage($chatId, $text, $markup);
             $this->users->updateLastPush($chatId, new DateTimeImmutable());
         });

@@ -6,10 +6,11 @@ namespace App\Telegram;
 
 use App\Infrastructure\I18n\Localizer;
 use App\Infrastructure\Telegram\TelegramApi;
+use App\Shared\AppOptions;
 
 final class KeyboardFactory
 {
-    public function __construct(private readonly Localizer $t)
+    public function __construct(private readonly Localizer $t, private readonly AppOptions $opts)
     {
     }
 
@@ -29,9 +30,12 @@ final class KeyboardFactory
         ]);
     }
 
-    public function createProfile(string $lang, string $url, ?int $userId = null): array
+    public function createProfile(string $lang, ?int $userId = null): array
     {
-        $urlWithId = $userId ? $url . (str_contains($url, '?') ? '&' : '?') . 'uid=' . urlencode((string)$userId) : $url;
+        $base = $this->opts->profileCreateUrl;
+        $urlWithId = $userId
+            ? $base . (str_contains($base, '?') ? '&' : '?') . 'uid=' . urlencode((string)$userId)
+            : $base;
         $btnCreate = TelegramApi::urlButton($this->t->t('create_profile.buttons.create_profile', $lang), $urlWithId);
         $btnBrowse = TelegramApi::callbackButton($this->t->t('create_profile.buttons.browse_profiles', $lang), [
             'action' => 'browse_profiles',
@@ -53,7 +57,9 @@ final class KeyboardFactory
             'action' => 'dislike_profile',
             'data' => ['profile_id' => $profileId],
         ]);
-        $btnConnect = TelegramApi::urlButton($this->t->t('profile.buttons.connect', $lang), 'https://example.com/connect?pid=' . $profileId);
+        $base = $this->opts->profileCreateUrl;
+        $connectUrl = $base . (str_contains($base, '?') ? '&' : '?') . 'pid=' . urlencode((string)$profileId);
+        $btnConnect = TelegramApi::urlButton($this->t->t('profile.buttons.connect', $lang), $connectUrl);
         return TelegramApi::inlineKeyboard([
             [$btnLike, $btnDislike],
             [$btnConnect],
