@@ -28,7 +28,7 @@ final class ProfilesImportFromStorageCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $root = dirname(__DIR__, 2);
-        $base = $root . 'public/storage/profiles';
+        $base = $root . '/public/storage/profiles';
         $dirs = [
             'men' => 'man',
             'women' => 'woman',
