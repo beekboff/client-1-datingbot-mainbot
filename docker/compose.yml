@@ -1,7 +1,17 @@
 services:
-  app: &appconfig
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dev
+    working_dir: /app
+    volumes:
+      - ..:/app
+      - caddy_data:/data/caddy
+      - caddy_config:/config/caddy
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    command: ["sleep", "infinity"]
 
 volumes:
   caddy_data:

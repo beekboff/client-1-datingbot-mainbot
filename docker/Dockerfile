@@ -1,9 +1,10 @@
 FROM composer/composer:2-bin AS composer
 
-FROM dunglas/frankenphp:1-php8.2-bookworm AS base
+FROM dunglas/frankenphp:1-php8.4-bookworm AS base
 
 RUN apt update && apt -y install \
-    unzip
+    unzip \
+    libcap2-bin
 
 RUN install-php-extensions \
     opcache \
@@ -17,7 +18,8 @@ RUN install-php-extensions \
     xml \
     xmlwriter \
     simplexml \
-    pdo
+    pdo \
+    pdo_mysql
 
 #
 # Development
@@ -35,13 +37,11 @@ RUN install-php-extensions \
 COPY --from=composer /composer /usr/bin/composer
 
 # Based on https://frankenphp.dev/docs/docker/#running-as-a-non-root-user
-RUN \
-	groupadd --gid ${GROUP_ID} ${GROUP_NAME}; \
-    useradd --gid ${GROUP_ID} --uid ${USER_ID} ${GROUP_NAME}; \
-	# Add additional capability to bind to port 80 and 443
-	setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp; \
-	# Give write access to /data/caddy and /config/caddy
-	chown -R ${USER_NAME}:${GROUP_NAME} /data/caddy && chown -R ${USER_NAME}:${GROUP_NAME} /config/caddy
+RUN groupadd --gid ${GROUP_ID} ${GROUP_NAME} && \
+    useradd --gid ${GROUP_ID} --uid ${USER_ID} ${GROUP_NAME} && \
+    setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp && \
+    chown -R ${USER_NAME}:${GROUP_NAME} /data/caddy && \
+    chown -R ${USER_NAME}:${GROUP_NAME} /config/caddy
 USER ${USER_NAME}
 
 #
