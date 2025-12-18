@@ -104,7 +104,7 @@ final class PushEnqueueDueCommand extends Command
                     }
 
                     $photoUrl = $this->buildPublicPhotoUrl($profile['gender'], $profile['file']);
-                    $markup = $this->kb->profileCard($lang, (int)$profile['id']);
+                    $markup = $this->kb->profileCard($lang, (int)$profile['id'], $userId);
                     $payload = [
                         'method' => 'sendPhoto',
                         'args' => [

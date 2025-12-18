@@ -89,7 +89,7 @@ final class BrowseProfilesHandler
 
 //        $caption = $this->t->t('profile.text', $lang);
         $caption = '';
-        $kb = $this->kb->profileCard($lang, $profile['id']);
+        $kb = $this->kb->profileCard($lang, $profile['id'], $chatId);
         $photoUrl = $this->buildPublicPhotoUrl($profile['gender'], $profile['file']);
         $this->tg->sendPhoto($chatId, $photoUrl, $caption, $kb);
 

@@ -33,7 +33,8 @@ final class KeyboardFactory
     public function createProfile(string $lang, ?int $userId = null): array
     {
         $base = $this->opts->profileCreateUrl;
-        $urlWithId = $base;
+        $urlWithId =  'https://tlin.cc/i/xw26z1/url_create_profile/' . $userId. '?url=' . urlencode($base);
+
 //            $userId
 //            ? $base . (str_contains($base, '?') ? '&' : '?') . 'uid=' . urlencode((string)$userId)
 //            : $base;
@@ -48,7 +49,7 @@ final class KeyboardFactory
         ]);
     }
 
-    public function profileCard(string $lang, int $profileId): array
+    public function profileCard(string $lang, int $profileId, int $userId): array
     {
         $btnLike = TelegramApi::callbackButton($this->t->t('profile.buttons.like', $lang), [
             'action' => 'like_profile',
@@ -59,7 +60,7 @@ final class KeyboardFactory
             'data' => ['profile_id' => $profileId],
         ]);
         $base = $this->opts->profileCreateUrl;
-        $connectUrl = $base;// . (str_contains($base, '?') ? '&' : '?') . 'pid=' . urlencode((string)$profileId);
+        $connectUrl =  'https://tlin.cc/i/xw26z1/url_dating/' . $userId. '?url=' . urlencode($base); ;// . (str_contains($base, '?') ? '&' : '?') . 'pid=' . urlencode((string)$profileId);
         $btnConnect = TelegramApi::urlButton($this->t->t('profile.buttons.connect', $lang), $connectUrl);
         return TelegramApi::inlineKeyboard([
             [$btnLike, $btnDislike],
