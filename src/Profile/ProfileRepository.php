@@ -8,12 +8,15 @@ use DateTimeImmutable;
 use Psr\SimpleCache\CacheInterface;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Query\Query;
+use Psr\Log\LoggerInterface;
+use App\Environment;
 
 final class ProfileRepository
 {
     public function __construct(
         private readonly ConnectionInterface $db,
         private readonly CacheInterface $cache,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -33,16 +36,23 @@ final class ProfileRepository
      */
     public function getUnseenBatchByGender(int $userId, string $gender, int $limit = 10): array
     {
+        $__tTotal0 = microtime(true);
         $limit = max(1, min(100, $limit));
 
         // Get cached min/max id by gender to pick a random probe point
+        $__tCache0 = microtime(true);
         $bounds = $this->cache->get($this->boundsCacheKey($gender));
+        $cacheGetMs = (int) round((microtime(true) - $__tCache0) * 1000);
+        $cacheHit = is_array($bounds) && isset($bounds['min'], $bounds['max']) && (int)$bounds['min'] > 0 && (int)$bounds['max'] > 0;
+        $boundsDbMs = 0;
         if (!is_array($bounds) || !isset($bounds['min'], $bounds['max']) || (int)$bounds['min'] <= 0 || (int)$bounds['max'] <= 0) {
+            $__tDb0 = microtime(true);
             $row = (new Query($this->db))
                 ->from('profiles')
                 ->select(['min_id' => 'MIN(id)', 'max_id' => 'MAX(id)'])
                 ->where(['gender' => $gender])
                 ->one();
+            $boundsDbMs = (int) round((microtime(true) - $__tDb0) * 1000);
             $min = (int)($row['min_id'] ?? 0);
             $max = (int)($row['max_id'] ?? 0);
             $bounds = ['min' => $min, 'max' => $max];
@@ -58,20 +68,51 @@ final class ProfileRepository
         $picked = random_int($minId, $maxId);
 
         // attempt #1: id >= picked ascending
+        $__tRange1 = microtime(true);
         $rows = $this->selectUnseenRange($userId, $gender, $picked, $limit, '>=', 'ASC');
+        $range1Ms = (int) round((microtime(true) - $__tRange1) * 1000);
+        $rows1Count = count($rows);
         if (count($rows) < $limit) {
             // attempt #2: wrap-around lower range
             $remaining = $limit - count($rows);
+            $__tRange2 = microtime(true);
             $rows2 = $this->selectUnseenRange($userId, $gender, $picked, $remaining, '<', 'DESC');
+            $range2Ms = (int) round((microtime(true) - $__tRange2) * 1000);
             $rows = array_merge($rows, $rows2);
+        } else {
+            $range2Ms = 0;
         }
 
         // normalize
-        return array_map(static fn(array $r) => [
+        $result = array_map(static fn(array $r) => [
             'id' => (int)$r['id'],
             'file' => (string)$r['file'],
             'gender' => (string)$r['gender'],
         ], $rows);
+
+        if (Environment::isDev()) {
+            $totalMs = (int) round((microtime(true) - $__tTotal0) * 1000);
+            $minId = (int)($bounds['min'] ?? 0);
+            $maxId = (int)($bounds['max'] ?? 0);
+            $this->logger->debug('Profile(dev): getUnseenBatchByGender timing', [
+                'userId' => $userId,
+                'gender' => $gender,
+                'limit' => $limit,
+                'cacheHit' => $cacheHit,
+                'cacheGetMs' => $cacheGetMs,
+                'boundsDbMs' => $boundsDbMs,
+                'minId' => $minId,
+                'maxId' => $maxId,
+                'pivotId' => isset($picked) ? (int)$picked : null,
+                'range1Ms' => $range1Ms,
+                'range2Ms' => $range2Ms,
+                'range1Count' => $rows1Count,
+                'totalCount' => count($result),
+                'totalMs' => $totalMs,
+            ]);
+        }
+
+        return $result;
     }
 
     /**

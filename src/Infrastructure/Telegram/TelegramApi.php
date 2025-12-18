@@ -6,6 +6,7 @@ namespace App\Infrastructure\Telegram;
 
 use GuzzleHttp\Client as HttpClient;
 use Psr\Log\LoggerInterface;
+use App\Environment;
 
 final class TelegramApi
 {
@@ -81,16 +82,31 @@ final class TelegramApi
         }
         $url = sprintf('%s/bot%s/%s', $this->baseUrl, $this->token, $method);
         try {
+            $t0 = microtime(true);
             $resp = $this->http->post($url, [
                 'json' => $payload,
                 'headers' => [
                     'Accept' => 'application/json',
                 ],
             ]);
+            $dtMs = (int) round((microtime(true) - $t0) * 1000);
             $body = (string) $resp->getBody();
             $data = json_decode($body, true);
             if (!is_array($data) || !($data['ok'] ?? false)) {
                 $this->logger->error('Telegram API error on {method}: {body}', ['method' => $method, 'body' => $body]);
+            }
+            if (Environment::isDev()) {
+                $this->logger->debug(
+                    'Profile(dev): Telegram API {method} completed in {ms} ms with status {code}, bytes={bytes}, ok={ok}',
+                    [
+                        'method' => $method,
+                        'ms' => $dtMs,
+                        'code' => method_exists($resp, 'getStatusCode') ? $resp->getStatusCode() : null,
+                        'bytes' => strlen($body),
+                        'ok' => (bool)($data['ok'] ?? false),
+                        'url' => $url,
+                    ]
+                );
             }
         } catch (\Throwable $e) {
             $this->logger->error('Telegram API exception on {method}: {error}', ['method' => $method, 'error' => $e->getMessage()]);
