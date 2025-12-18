@@ -46,7 +46,7 @@ final class ProfileRepository
             $min = (int)($row['min_id'] ?? 0);
             $max = (int)($row['max_id'] ?? 0);
             $bounds = ['min' => $min, 'max' => $max];
-            $this->cache->set($this->boundsCacheKey($gender), $bounds, 60); // cache for 60s
+            $this->cache->set($this->boundsCacheKey($gender), $bounds, 3600); // cache for 3600s
         }
 
         $minId = (int)$bounds['min'];
