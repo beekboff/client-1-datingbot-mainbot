@@ -6,6 +6,7 @@ namespace App\Telegram;
 
 use App\Infrastructure\I18n\Localizer;
 use App\Infrastructure\Telegram\TelegramApi;
+use App\Shared\AppOptions;
 use App\User\UserRepository;
 use App\Telegram\Handlers\PreferenceHandler;
 use App\Telegram\Handlers\BrowseProfilesHandler;
@@ -26,6 +27,7 @@ final class UpdateDispatcher
         private readonly StartHandler $start,
         private readonly PreferenceHandler $preference,
         private readonly BrowseProfilesHandler $browse,
+        private readonly AppOptions $opts,
     ) {
     }
 
@@ -118,7 +120,10 @@ final class UpdateDispatcher
                     }
                     if ($action === 'set_age_group') {
                         $lang = $this->users->getLanguage($chatId) ?? 'en';
-                        $this->tg->sendMessage($chatId, $this->t->t('subscription.text', $lang), $this->kb->subscription($lang));
+                        $text = $this->t->t('subscription.text', $lang);
+                        $kb = $this->kb->subscription($lang);
+                        $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/subscribe_ru.jpg';
+                        $this->tg->sendPhoto($chatId, $photoUrl, $text, $kb);
                         return;
                     }
                     if ($action === 'browse_profiles' || $action === 'like_profile' || $action === 'dislike_profile') {

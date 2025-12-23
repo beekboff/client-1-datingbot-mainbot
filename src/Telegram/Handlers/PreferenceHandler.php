@@ -7,6 +7,7 @@ namespace App\Telegram\Handlers;
 use App\Infrastructure\I18n\Localizer;
 use App\Infrastructure\RabbitMQ\RabbitMqService;
 use App\Infrastructure\Telegram\TelegramApi;
+use App\Shared\AppOptions;
 use App\Telegram\Handlers\BrowseProfilesHandler;
 use App\Telegram\KeyboardFactory;
 use App\User\UserRepository;
@@ -22,6 +23,7 @@ final class PreferenceHandler
         private readonly BrowseProfilesHandler $browse,
         private readonly LoggerInterface $logger,
         private readonly KeyboardFactory $kb,
+        private readonly AppOptions $opts,
     ) {
     }
 
@@ -54,7 +56,8 @@ final class PreferenceHandler
         $lang = $this->users->getLanguage($chatId) ?? 'en';
         $ageText = $this->t->t('age_selection.text', $lang);
         $ageKb = $this->kb->ageSelection($lang);
-        $this->tg->sendMessage($chatId, $ageText, $ageKb);
+        $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/age_ru.jpg';
+        $this->tg->sendPhoto($chatId, $photoUrl, $ageText, $ageKb);
 
         // Immediately send a profile card according to the new preference
 //        $this->browse->sendNext($update);

@@ -6,6 +6,7 @@ namespace App\Telegram\Handlers;
 
 use App\Infrastructure\I18n\Localizer;
 use App\Infrastructure\Telegram\TelegramApi;
+use App\Shared\AppOptions;
 use App\Telegram\KeyboardFactory;
 use App\User\UserRepository;
 
@@ -16,6 +17,7 @@ final class StartHandler
         private readonly Localizer $t,
         private readonly TelegramApi $tg,
         private readonly KeyboardFactory $kb,
+        private readonly AppOptions $opts,
     ) {
     }
 
@@ -40,6 +42,7 @@ final class StartHandler
 
         $text = $this->t->t('find_whom.text', $lang);
         $kb = $this->kb->findWhom($lang);
-        $this->tg->sendMessage($chatId, $text, $kb);
+        $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/find_whom_ru.jpg';
+        $this->tg->sendPhoto($chatId, $photoUrl, $text, $kb);
     }
 }

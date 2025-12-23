@@ -48,7 +48,8 @@ final class BrowseProfilesHandler
             // ask for preference again
             $text = $this->t->t('find_whom.text', $lang);
             $kb = $this->kb->findWhom($lang);
-            $this->tg->sendMessage($chatId, $text, $kb);
+            $photoUrl = rtrim($this->options->publicBaseUrl, '/') . '/storage/find_whom_ru.jpg';
+            $this->tg->sendPhoto($chatId, $photoUrl, $text, $kb);
             return;
         }
 

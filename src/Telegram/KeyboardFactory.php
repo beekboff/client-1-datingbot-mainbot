@@ -73,7 +73,7 @@ final class KeyboardFactory
         $buttons = [
             TelegramApi::callbackButton('18+', ['action' => 'set_age_group', 'data' => ['age' => '18+']]),
             TelegramApi::callbackButton('25+', ['action' => 'set_age_group', 'data' => ['age' => '25+']]),
-            TelegramApi::callbackButton('35', ['action' => 'set_age_group', 'data' => ['age' => '35']]),
+            TelegramApi::callbackButton('35', ['action' => 'set_age_group', 'data' => ['age' => '35+']]),
             TelegramApi::callbackButton('45+', ['action' => 'set_age_group', 'data' => ['age' => '45+']]),
         ];
         return TelegramApi::inlineKeyboard([
