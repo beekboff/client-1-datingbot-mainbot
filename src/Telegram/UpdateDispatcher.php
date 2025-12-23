@@ -116,6 +116,11 @@ final class UpdateDispatcher
                         $this->preference->handle($tgUpdate, $payload);
                         return;
                     }
+                    if ($action === 'set_age_group') {
+                        $lang = $this->users->getLanguage($chatId) ?? 'en';
+                        $this->tg->sendMessage($chatId, $this->t->t('subscription.text', $lang), $this->kb->subscription($lang));
+                        return;
+                    }
                     if ($action === 'browse_profiles' || $action === 'like_profile' || $action === 'dislike_profile') {
                         $this->browse->sendNext($tgUpdate);
                         return;

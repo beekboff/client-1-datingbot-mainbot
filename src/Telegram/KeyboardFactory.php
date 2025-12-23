@@ -33,7 +33,7 @@ final class KeyboardFactory
     public function createProfile(string $lang, ?int $userId = null): array
     {
         $base = $this->opts->profileCreateUrl;
-        $urlWithId =  'https://tlin.cc/i/xw26z1/url_create_profile/' . $userId. '?url=' . urlencode($base);
+        $urlWithId = $base; //  'https://tlin.cc/i/xw26z1/url_create_profile/' . $userId. '?url=' . urlencode($base);
 
 //            $userId
 //            ? $base . (str_contains($base, '?') ? '&' : '?') . 'uid=' . urlencode((string)$userId)
@@ -60,11 +60,38 @@ final class KeyboardFactory
             'data' => ['profile_id' => $profileId],
         ]);
         $base = $this->opts->profileCreateUrl;
-        $connectUrl =  'https://tlin.cc/i/xw26z1/url_dating/' . $userId. '?url=' . urlencode($base); ;// . (str_contains($base, '?') ? '&' : '?') . 'pid=' . urlencode((string)$profileId);
+        $connectUrl = $base; //  'https://tlin.cc/i/xw26z1/url_dating/' . $userId. '?url=' . urlencode($base); ;// . (str_contains($base, '?') ? '&' : '?') . 'pid=' . urlencode((string)$profileId);
         $btnConnect = TelegramApi::urlButton($this->t->t('profile.buttons.connect', $lang), $connectUrl);
         return TelegramApi::inlineKeyboard([
             [$btnLike, $btnDislike],
             [$btnConnect],
+        ]);
+    }
+
+    public function ageSelection(string $lang): array
+    {
+        $buttons = [
+            TelegramApi::callbackButton('18+', ['action' => 'set_age_group', 'data' => ['age' => '18+']]),
+            TelegramApi::callbackButton('25+', ['action' => 'set_age_group', 'data' => ['age' => '25+']]),
+            TelegramApi::callbackButton('35', ['action' => 'set_age_group', 'data' => ['age' => '35']]),
+            TelegramApi::callbackButton('45+', ['action' => 'set_age_group', 'data' => ['age' => '45+']]),
+        ];
+        return TelegramApi::inlineKeyboard([
+            [$buttons[0], $buttons[1]],
+            [$buttons[2], $buttons[3]]
+        ]);
+    }
+
+    public function subscription(string $lang): array
+    {
+        $btnSub = TelegramApi::urlButton($this->t->t('subscription.buttons.subscribe', $lang), 'https://t.me/+fBt5Zsus3ApiNWEy');
+        $btnContinue = TelegramApi::callbackButton($this->t->t('subscription.buttons.continue', $lang), [
+            'action' => 'browse_profiles',
+            'data' => new \stdClass(),
+        ]);
+        return TelegramApi::inlineKeyboard([
+            [$btnSub],
+            [$btnContinue]
         ]);
     }
 }

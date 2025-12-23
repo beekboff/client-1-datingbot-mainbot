@@ -41,5 +41,9 @@ final class StartHandler
         $text = $this->t->t('find_whom.text', $lang);
         $kb = $this->kb->findWhom($lang);
         $this->tg->sendMessage($chatId, $text, $kb);
+
+        $ageText = $this->t->t('age_selection.text', $lang);
+        $ageKb = $this->kb->ageSelection($lang);
+        $this->tg->sendMessage($chatId, $ageText, $ageKb);
     }
 }
