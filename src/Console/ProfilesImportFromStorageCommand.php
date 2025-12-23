@@ -48,6 +48,7 @@ final class ProfilesImportFromStorageCommand extends Command
 
         $total = 0;
         $created = 0;
+        $exists = 0;
         $skipped = 0;
 
         foreach ($dirs as $folder => $gender) {
@@ -68,13 +69,19 @@ final class ProfilesImportFromStorageCommand extends Command
                 }
                 $total++;
                 $res = $this->profiles->createIfNotExists($f, $gender);
-                if ($res['created'] && $res['id'] > 0) {
-                    $created++;
+                if ($res['created']) {
+                    if ($res['id'] > 0) {
+                        $created++;
+                    } else {
+                        $skipped++;
+                    }
+                } else {
+                    $exists++;
                 }
             }
         }
 
-        $io->success("Processed: $total, created: $created, skipped: $skipped");
+        $io->success("Processed: $total, created: $created, already exists: $exists, skipped: $skipped");
         return ExitCode::OK;
     }
 }

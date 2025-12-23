@@ -28,7 +28,10 @@ final class BotContext
             'rabbit:consume-pushes',
             'rabbit:consume-profile-prompt',
             'app:setup',
-            'push:enqueue-due'
+            'push:enqueue-due',
+            'profiles:import-storage',
+            'tg:cleanup-processed-updates',
+            'push:reset-daily-counter'
         ];
         foreach ($_SERVER['argv'] ?? [] as $i => $arg) {
             foreach ($commands as $cmd) {
