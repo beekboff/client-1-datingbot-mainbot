@@ -69,12 +69,13 @@ final class RabbitMqService
         });
     }
 
-    public function consumeUpdates(callable $handler): void
+    public function consumeUpdates(callable $handler, int $memoryLimit = 0, int $messagesLimit = 0): void
     {
         $conn = $this->factory->create();
         $ch = $conn->channel();
         $ch->basic_qos(null, 1, null);
-        $ch->basic_consume(self::Q_UPDATES, '', false, false, false, false, function (AMQPMessage $msg) use ($handler): void {
+        $processedMessages = 0;
+        $ch->basic_consume(self::Q_UPDATES, '', false, false, false, false, function (AMQPMessage $msg) use ($handler, &$processedMessages): void {
             try {
                 $body = $msg->getBody();
                 $update = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
@@ -115,22 +116,33 @@ final class RabbitMqService
                     $this->logger->flush(true);
                 }
                 $msg->nack(false, false); // drop message to avoid infinite loop
+            } finally {
+                $processedMessages++;
             }
         });
 
         while ($ch->is_consuming()) {
             $ch->wait();
+            if ($messagesLimit > 0 && $processedMessages >= $messagesLimit) {
+                $this->logger->info("Message limit reached ({$messagesLimit}), stopping consumer.");
+                break;
+            }
+            if ($memoryLimit > 0 && (memory_get_usage(true) / 1024 / 1024) >= $memoryLimit) {
+                $this->logger->info("Memory limit reached (" . round(memory_get_usage(true) / 1024 / 1024, 2) . "MB >= {$memoryLimit}MB), stopping consumer.");
+                break;
+            }
         }
         $ch->close();
         $conn->close();
     }
 
-    public function consumeProfilePrompt(callable $handler): void
+    public function consumeProfilePrompt(callable $handler, int $memoryLimit = 0, int $messagesLimit = 0): void
     {
         $conn = $this->factory->create();
         $ch = $conn->channel();
         $ch->basic_qos(null, 1, null);
-        $ch->basic_consume(self::Q_PROFILE_PROMPT, '', false, false, false, false, function (AMQPMessage $msg) use ($handler): void {
+        $processedMessages = 0;
+        $ch->basic_consume(self::Q_PROFILE_PROMPT, '', false, false, false, false, function (AMQPMessage $msg) use ($handler, &$processedMessages): void {
             try {
                 $payload = json_decode($msg->getBody(), true, 512, JSON_THROW_ON_ERROR);
                 $handler($payload);
@@ -150,10 +162,20 @@ final class RabbitMqService
                     $this->logger->flush(true);
                 }
                 $msg->nack(false, false);
+            } finally {
+                $processedMessages++;
             }
         });
         while ($ch->is_consuming()) {
             $ch->wait();
+            if ($messagesLimit > 0 && $processedMessages >= $messagesLimit) {
+                $this->logger->info("Message limit reached ({$messagesLimit}), stopping consumer.");
+                break;
+            }
+            if ($memoryLimit > 0 && (memory_get_usage(true) / 1024 / 1024) >= $memoryLimit) {
+                $this->logger->info("Memory limit reached (" . round(memory_get_usage(true) / 1024 / 1024, 2) . "MB >= {$memoryLimit}MB), stopping consumer.");
+                break;
+            }
         }
         $ch->close();
         $conn->close();
@@ -193,12 +215,13 @@ final class RabbitMqService
         });
     }
 
-    public function consumePushes(callable $handler): void
+    public function consumePushes(callable $handler, int $memoryLimit = 0, int $messagesLimit = 0): void
     {
         $conn = $this->factory->create();
         $ch = $conn->channel();
         $ch->basic_qos(null, 1, null);
-        $ch->basic_consume(self::Q_PUSH, '', false, false, false, false, function (AMQPMessage $msg) use ($handler): void {
+        $processedMessages = 0;
+        $ch->basic_consume(self::Q_PUSH, '', false, false, false, false, function (AMQPMessage $msg) use ($handler, &$processedMessages): void {
             try {
                 $payload = json_decode($msg->getBody(), true, 512, JSON_THROW_ON_ERROR);
                 $handler($payload);
@@ -218,10 +241,20 @@ final class RabbitMqService
                     $this->logger->flush(true);
                 }
                 $msg->nack(false, false);
+            } finally {
+                $processedMessages++;
             }
         });
         while ($ch->is_consuming()) {
             $ch->wait();
+            if ($messagesLimit > 0 && $processedMessages >= $messagesLimit) {
+                $this->logger->info("Message limit reached ({$messagesLimit}), stopping consumer.");
+                break;
+            }
+            if ($memoryLimit > 0 && (memory_get_usage(true) / 1024 / 1024) >= $memoryLimit) {
+                $this->logger->info("Memory limit reached (" . round(memory_get_usage(true) / 1024 / 1024, 2) . "MB >= {$memoryLimit}MB), stopping consumer.");
+                break;
+            }
         }
         $ch->close();
         $conn->close();

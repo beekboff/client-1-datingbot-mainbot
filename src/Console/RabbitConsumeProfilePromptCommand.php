@@ -13,7 +13,6 @@ use App\Telegram\KeyboardFactory;
 use App\User\UserRepository;
 use DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,7 +22,7 @@ use Yiisoft\Yii\Console\ExitCode;
     name: 'rabbit:consume-profile-prompt',
     description: 'Consume delayed profile prompt messages and send Telegram notifications',
 )]
-final class RabbitConsumeProfilePromptCommand extends Command
+final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
 {
     public function __construct(
         private readonly RabbitMqService $mq,
@@ -39,6 +38,7 @@ final class RabbitConsumeProfilePromptCommand extends Command
 
     protected function configure(): void
     {
+        parent::configure();
         $this->addArgument('bot_id', InputArgument::REQUIRED, 'Bot ID');
     }
 
@@ -50,21 +50,25 @@ final class RabbitConsumeProfilePromptCommand extends Command
         $output->writeln("<info>Consuming delayed profile prompts for bot {$botId}...</info>");
         $this->mq->ensureTopology();
 
-        $this->mq->consumeProfilePrompt(function (array $payload): void {
-            $action = (string)($payload['action'] ?? '');
-            if ($action !== 'send_create_profile') {
-                return;
-            }
-            $chatId = (int)($payload['chat_id'] ?? 0);
-            if ($chatId <= 0) {
-                return;
-            }
-            $lang = $this->users->getLanguage($chatId) ?? 'en';
-            $text = $this->t->t('create_profile.text', $lang);
-            $markup = $this->kb->createProfile($lang, $chatId);
-            $this->tg->sendMessage($chatId, $text, $markup);
-            $this->users->updateLastPush($chatId, new DateTimeImmutable());
-        });
+        $this->mq->consumeProfilePrompt(
+            function (array $payload): void {
+                $action = (string)($payload['action'] ?? '');
+                if ($action !== 'send_create_profile') {
+                    return;
+                }
+                $chatId = (int)($payload['chat_id'] ?? 0);
+                if ($chatId <= 0) {
+                    return;
+                }
+                $lang = $this->users->getLanguage($chatId) ?? 'en';
+                $text = $this->t->t('create_profile.text', $lang);
+                $markup = $this->kb->createProfile($lang, $chatId);
+                $this->tg->sendMessage($chatId, $text, $markup);
+                $this->users->updateLastPush($chatId, new DateTimeImmutable());
+            },
+            $this->getMemoryLimit($input),
+            $this->getMessagesLimit($input)
+        );
 
         return ExitCode::OK;
     }
