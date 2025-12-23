@@ -8,6 +8,7 @@ use App\Infrastructure\RabbitMQ\RabbitMqService;
 use App\Infrastructure\Logging\TelegramLogTarget;
 use App\Infrastructure\Telegram\TelegramApi;
 use App\Shared\AppOptions;
+use App\Shared\BotContext;
 use App\User\UserRepository;
 use GuzzleHttp\Client as GuzzleClient;
 use Psr\Log\LoggerInterface;
@@ -29,34 +30,46 @@ use Yiisoft\Log\Target\File\FileTarget;
 /** @var array $params */
 
 return [
-    MysqlConnection::class => static function () use ($params) {
+    BotContext::class => BotContext::class,
+
+    MysqlConnection::class => static function (BotContext $botContext) use ($params) {
         $dsn = $params['db']['dsn'] ?? 'mysql:host=127.0.0.1;dbname=dating_bot;charset=utf8mb4';
+        $botId = $botContext->getBotId();
+        if ($botId !== null) {
+            $dsn = preg_replace('/dbname=[^;]+/', "dbname={$botId}_dating_bot", $dsn);
+        }
         $user = $params['db']['user'] ?? 'root';
         $pass = $params['db']['pass'] ?? '';
         $driver = new MysqlDriver($dsn, $user, $pass);
         $schemaCache = new SchemaCache(new ArrayCache());
-        $conn = new MysqlConnection($driver, $schemaCache);
-        return $conn;
+        return new MysqlConnection($driver, $schemaCache);
     },
 
     ConnectionInterface::class => MysqlConnection::class,
 
     GuzzleClient::class => static fn () => new GuzzleClient(['timeout' => 10.0]),
 
-    TelegramApi::class => static function (GuzzleClient $client, LoggerInterface $logger) use ($params) {
-        $token = $params['telegram']['token'] ?? '';
+    TelegramApi::class => static function (GuzzleClient $client, LoggerInterface $logger, BotContext $botContext) use ($params) {
+        $botTokens = [];
+        $bots = $params['telegram']['bots'] ?? [];
+        foreach ($bots as $id => $botCfg) {
+            if (isset($botCfg['token'])) {
+                $botTokens[(string)$id] = $botCfg['token'];
+            }
+        }
         $baseUrl = rtrim($params['telegram']['base_url'] ?? 'https://api.telegram.org', '/');
-        return new TelegramApi($client, $logger, $baseUrl, $token);
+        $defaultToken = $params['telegram']['token'] ?? '';
+        return new TelegramApi($client, $logger, $baseUrl, $botContext, $botTokens, $defaultToken);
     },
 
-    RabbitMqConnectionFactory::class => static function () use ($params) {
+    RabbitMqConnectionFactory::class => static function (BotContext $botContext) use ($params) {
         $cfg = $params['rabbitmq'] ?? [];
         $host = $cfg['host'] ?? '127.0.0.1';
         $port = (int) ($cfg['port'] ?? 5672);
         $user = $cfg['user'] ?? 'guest';
         $pass = $cfg['pass'] ?? 'guest';
-        $vhost = $cfg['vhost'] ?? '/';
-        return new RabbitMqConnectionFactory($host, $port, $user, $pass, $vhost);
+        $vhost = $botContext->getBotId() ?? ($cfg['vhost'] ?? '/');
+        return new RabbitMqConnectionFactory($host, $port, $user, $pass, (string)$vhost);
     },
 
     Localizer::class => static function () use ($params) {
@@ -96,12 +109,19 @@ return [
 
     // Important: construct TelegramApi with a NullLogger here to avoid circular dependency:
     // Logger -> TelegramLogTarget -> TelegramApi -> LoggerInterface
-    TelegramLogTarget::class => static function (GuzzleClient $client) use ($params) {
-        // Use a dedicated token for the logging bot if provided; fall back to main bot token
-        $token = $params['telegram']['log_bot_token']
+    TelegramLogTarget::class => static function (GuzzleClient $client, BotContext $botContext) use ($params) {
+        $botTokens = [];
+        $bots = $params['telegram']['bots'] ?? [];
+        foreach ($bots as $id => $botCfg) {
+            if (isset($botCfg['token'])) {
+                $botTokens[(string)$id] = $botCfg['token'];
+            }
+        }
+        $baseUrl = rtrim($params['telegram']['base_url'] ?? 'https://api.telegram.org', '/');
+        $defaultToken = $params['telegram']['log_bot_token']
             ?? $params['telegram']['token']
             ?? '';
-        $baseUrl = rtrim($params['telegram']['base_url'] ?? 'https://api.telegram.org', '/');
+
         // Create a dedicated file logger for Telegram API diagnostics to avoid circular deps
         $base = dirname(__DIR__, 3);
         $tgApiLogFile = $base . '/runtime/logs/telegram-api.log';
@@ -113,7 +133,7 @@ return [
             LogLevel::EMERGENCY,
         ]);
         $apiLogger = new Logger([$tgApiTarget]);
-        $api = new TelegramApi($client, $apiLogger, $baseUrl, $token);
+        $api = new TelegramApi($client, $apiLogger, $baseUrl, $botContext, $botTokens, $defaultToken);
 
         $chatId = $params['telegram']['log_chat_id'] ?? '';
         $env = $params['APP_ENV'] ?? 'dev';

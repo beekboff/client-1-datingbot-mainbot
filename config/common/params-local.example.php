@@ -23,7 +23,14 @@ return [
     ],
 
     'telegram' => [
-        'token' => '123456:ABCDEF...',
+        'bots' => [
+            '123' => [
+                'token' => '123456:ABCDEF...',
+            ],
+            // '456' => [
+            //     'token' => '...',
+            // ],
+        ],
         'base_url' => 'https://api.telegram.org',
         // optional logging bot/token and chat
         'log_bot_token' => null,

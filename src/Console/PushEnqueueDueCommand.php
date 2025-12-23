@@ -8,12 +8,14 @@ use App\Infrastructure\I18n\Localizer;
 use App\Infrastructure\RabbitMQ\RabbitMqService;
 use App\Shared\AppOptions;
 use App\Profile\ProfileRepository;
+use App\Shared\BotContext;
 use App\Telegram\KeyboardFactory;
 use App\User\UserRepository;
 use DateTimeImmutable;
 use Psr\SimpleCache\CacheInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Yiisoft\Yii\Console\ExitCode;
@@ -32,12 +34,21 @@ final class PushEnqueueDueCommand extends Command
         private readonly KeyboardFactory $kb,
         private readonly AppOptions $opts,
         private readonly ProfileRepository $profiles,
+        private readonly BotContext $botContext,
     ) {
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this->addArgument('bot_id', InputArgument::REQUIRED, 'Bot ID');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $botId = (string)$input->getArgument('bot_id');
+        $this->botContext->setBotId($botId);
+
         // Time window: work only between 10:00 and 06:00 UTC (spanning midnight)
         $now = new DateTimeImmutable('now', new \DateTimeZone('UTC'));
         if (!$this->withinWindow($now, 10, 6)) {
@@ -46,14 +57,15 @@ final class PushEnqueueDueCommand extends Command
         }
 
         // Simple cache lock to prevent concurrent runs
-        $lockKey = 'push_enqueue_lock';
+        $lockKey = "push_enqueue_lock_{$botId}";
         if ($this->cache->get($lockKey)) {
-            $output->writeln('<comment>Another instance is running. Skipping.</comment>');
+            $output->writeln("<comment>Another instance for bot {$botId} is running. Skipping.</comment>");
             return ExitCode::OK;
         }
         $this->cache->set($lockKey, 1, 55); // TTL ~1 minute
 
         try {
+            $output->writeln("<info>Scanning due users for bot {$botId}...</info>");
             $this->mq->ensureTopology();
 
             $batchSize = 1000;

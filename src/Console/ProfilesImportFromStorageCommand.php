@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Console;
 
 use App\Profile\ProfileRepository;
+use App\Shared\BotContext;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -18,13 +20,23 @@ use Yiisoft\Yii\Console\ExitCode;
 )]
 final class ProfilesImportFromStorageCommand extends Command
 {
-    public function __construct(private readonly ProfileRepository $profiles)
-    {
+    public function __construct(
+        private readonly ProfileRepository $profiles,
+        private readonly BotContext $botContext,
+    ) {
         parent::__construct();
+    }
+
+    protected function configure(): void
+    {
+        $this->addArgument('bot_id', InputArgument::REQUIRED, 'Bot ID');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $botId = (string)$input->getArgument('bot_id');
+        $this->botContext->setBotId($botId);
+
         $io = new SymfonyStyle($input, $output);
 
         $root = dirname(__DIR__, 2);

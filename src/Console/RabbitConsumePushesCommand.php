@@ -6,10 +6,12 @@ namespace App\Console;
 
 use App\Infrastructure\RabbitMQ\RabbitMqService;
 use App\Infrastructure\Telegram\TelegramApi;
+use App\Shared\BotContext;
 use App\User\UserRepository;
 use DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Yiisoft\Yii\Console\ExitCode;
@@ -24,13 +26,22 @@ final class RabbitConsumePushesCommand extends Command
         private readonly RabbitMqService $mq,
         private readonly TelegramApi $tg,
         private readonly UserRepository $users,
+        private readonly BotContext $botContext,
     ) {
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this->addArgument('bot_id', InputArgument::REQUIRED, 'Bot ID');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $output->writeln('<info>Consuming pushes from queue tg.pushes...</info>');
+        $botId = (string)$input->getArgument('bot_id');
+        $this->botContext->setBotId($botId);
+
+        $output->writeln("<info>Consuming pushes from queue tg.pushes for bot {$botId}...</info>");
         $this->mq->ensureTopology();
 
         $this->mq->consumePushes(function (array $payload): void {

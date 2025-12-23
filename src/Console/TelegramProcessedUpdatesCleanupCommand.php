@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Console;
 
+use App\Shared\BotContext;
 use App\Telegram\ProcessedUpdatesRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,18 +20,24 @@ use Yiisoft\Yii\Console\ExitCode;
 )]
 final class TelegramProcessedUpdatesCleanupCommand extends Command
 {
-    public function __construct(private readonly ProcessedUpdatesRepository $repo)
-    {
+    public function __construct(
+        private readonly ProcessedUpdatesRepository $repo,
+        private readonly BotContext $botContext,
+    ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
+        $this->addArgument('bot_id', InputArgument::REQUIRED, 'Bot ID');
         $this->addOption('days', null, InputOption::VALUE_OPTIONAL, 'How many days to keep', '2');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $botId = (string)$input->getArgument('bot_id');
+        $this->botContext->setBotId($botId);
+
         $daysOpt = (string)$input->getOption('days');
         $days = (int)$daysOpt;
         if ($days <= 0) {

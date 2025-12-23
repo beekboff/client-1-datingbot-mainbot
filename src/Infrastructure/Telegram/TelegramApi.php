@@ -4,16 +4,22 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Telegram;
 
+use App\Shared\BotContext;
 use GuzzleHttp\Client as HttpClient;
 use Psr\Log\LoggerInterface;
 
 final class TelegramApi
 {
+    /**
+     * @param array<string, string> $botTokens Map of bot_id => token
+     */
     public function __construct(
         private readonly HttpClient $http,
         private readonly LoggerInterface $logger,
         private readonly string $baseUrl,
-        private readonly string $token,
+        private readonly BotContext $botContext,
+        private readonly array $botTokens = [],
+        private readonly string $defaultToken = '',
     ) {
     }
 
@@ -73,13 +79,26 @@ final class TelegramApi
         ];
     }
 
+    private function getToken(): string
+    {
+        $botId = $this->botContext->getBotId();
+        if ($botId !== null && isset($this->botTokens[$botId])) {
+            return $this->botTokens[$botId];
+        }
+        return $this->defaultToken;
+    }
+
     private function call(string $method, array $payload): void
     {
-        if ($this->token === '') {
-            $this->logger->warning('Telegram token is empty, skipping call {method}', ['method' => $method]);
+        $token = $this->getToken();
+        if ($token === '') {
+            $this->logger->warning('Telegram token is empty for bot {bot_id}, skipping call {method}', [
+                'bot_id' => $this->botContext->getBotId(),
+                'method' => $method
+            ]);
             return;
         }
-        $url = sprintf('%s/bot%s/%s', $this->baseUrl, $this->token, $method);
+        $url = sprintf('%s/bot%s/%s', $this->baseUrl, $token, $method);
         try {
             $resp = $this->http->post($url, [
                 'json' => $payload,

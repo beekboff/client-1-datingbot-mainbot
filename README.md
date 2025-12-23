@@ -9,21 +9,49 @@
 - Composer
 - (опционально) Docker для запуска контейнера с PHP (см. docker/Dockerfile)
 
-### Переменные окружения
-Переменные можно задать через `.env` в корне проекта (загружается автоматически при старте) либо как реальные переменные окружения. Также часть значений можно переопределить в `config/common/params.php`.
+### Поддержка нескольких ботов
+Сервис поддерживает работу с несколькими ботами одновременно. Изоляция данных обеспечивается на уровне:
+- **Базы данных**: для каждого бота используется отдельная БД с именем `{bot_id}_dating_bot` (например, `123_dating_bot`).
+- **RabbitMQ**: для каждого бота используется отдельный virtual host (`vhost`), имя которого совпадает с `{bot_id}`.
 
-- `TELEGRAM_BOT_TOKEN` — токен основного бота (с которым взаимодействуют пользователи)
-- `TELEGRAM_BOT_TOKEN_LOG` (или `TELEGRAM_LOG_BOT_TOKEN`) — отдельный токен бота для отправки логов в Telegram
-- `TELEGRAM_LOG_CHAT_ID` — ID чата/канала, куда слать ошибки/алерты (личный чат или группа/канал, где лог‑бот имеет право писать)
-- `RABBITMQ_HOST` (по умолчанию 127.0.0.1)
-- `RABBITMQ_PORT` (по умолчанию 5672)
-- `RABBITMQ_USER` (по умолчанию guest)
-- `RABBITMQ_PASS` (по умолчанию guest)
-- `RABBITMQ_VHOST` (по умолчанию /)
-- `DB_DSN` (пример: `mysql:host=127.0.0.1;dbname=dating_bot;charset=utf8mb4`)
-- `DB_USER` (по умолчанию root)
-- `DB_PASS` (по умолчанию пусто)
+### Переменные окружения и конфигурация
+Конфигурация теперь поддерживает несколько токенов. Основные настройки рекомендуется выносить в `config/common/params-local.php`.
+
+Пример `config/common/params-local.php`:
+```php
+return [
+    'db' => [
+        'dsn' => 'mysql:host=127.0.0.1;dbname=dating_bot;charset=utf8mb4', // dbname будет заменено на {bot_id}_dating_bot
+        'user' => 'root',
+        'pass' => 'password',
+    ],
+    'rabbitmq' => [
+        'host' => '127.0.0.1',
+        'port' => 5672,
+        'user' => 'guest',
+        'pass' => 'guest',
+    ],
+    'telegram' => [
+        'bots' => [
+            '123' => [
+                'token' => '123456:ABC...',
+            ],
+            '456' => [
+                'token' => '456789:XYZ...',
+            ],
+        ],
+        'log_chat_id' => '...', // Чат для логов
+    ],
+];
+```
+
+Также поддерживаются классические переменные окружения (используются как значения по умолчанию):
+- `TELEGRAM_BOT_TOKEN` — токен бота по умолчанию
+- `TELEGRAM_LOG_CHAT_ID` — ID чата для логов
+- `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`, `RABBITMQ_PASS`
+- `DB_DSN`, `DB_USER`, `DB_PASS`
 - `APP_ENV` (`dev`/`prod`)
+- `BOT_ID` — можно задать глобально через ENV, если запускается только один бот.
 
 URL для создания анкеты настраивается в `config/common/params.php` → `app.profileCreateUrl`.
 
@@ -34,27 +62,16 @@ composer dump-autoload
 ```
 
 ### Миграции БД
-Используется «стоковый» механизм Yii3 через консольное приложение (`./yii migrate:*`).
-
-Настройка:
-- Подключение к БД берётся из переменных окружения `DB_DSN`, `DB_USER`, `DB_PASS` либо из `config/common/params.php` → `db`.
-- Пространство имён миграций — `App\Migrations` (см. `config/common/params.php` → `yiisoft/db-migration`).
+Используется механизм Yii3 через консольное приложение (`./yii migrate:*`). 
+**Важно**: миграции нужно запускать для каждой базы данных бота отдельно, указывая `BOT_ID`.
 
 Примеры команд:
 ```bash
-# Экспортируйте переменные окружения при необходимости
-export DB_DSN="mysql:host=127.0.0.1;dbname=dating_bot;charset=utf8mb4"
-export DB_USER="root"
-export DB_PASS=""
+# Применить миграции для бота 123 (БД 123_dating_bot)
+BOT_ID=123 ./yii migrate:up
 
-# Показать новые миграции
-./yii migrate:new
-
-# Применить миграции
-./yii migrate:up
-
-# Посмотреть историю
-./yii migrate:history
+# Применить миграции для бота 456 (БД 456_dating_bot)
+BOT_ID=456 ./yii migrate:up
 ```
 
 Миграции создают таблицу `users` со столбцами:
@@ -74,9 +91,10 @@ export DB_PASS=""
 Диспетчер `src/Telegram/UpdateDispatcher.php` проверяет `update_id` и пропускает апдейты, которые уже были обработаны ранее.
 
 ### Настройка RabbitMQ топологии
-Выполните (создаст обменник/очереди и т.д.):
+Выполните для каждого бота (создаст обменник/очереди в соответствующем vhost):
 ```bash
-./yii app:setup
+./yii app:setup 123
+./yii app:setup 456
 ```
 
 Будут задекларированы:
@@ -86,14 +104,19 @@ export DB_PASS=""
 - Очередь задержки `tg.profile_prompt.delay` с DLX на `tg.direct` и routing-key `tg.profile_prompt` (TTL используется на уровне сообщения)
 
 ### Запуск консьюмеров
-Нужны два процесса:
+Для каждого бота нужно запустить свои процессы консьюмеров, передавая `bot_id` аргументом:
+
 1) Консьюмер входящих апдейтов из Telegram (из RabbitMQ):
 ```bash
-./yii rabbit:consume-updates
+./yii rabbit:consume-updates 123
 ```
 2) Консьюмер отложенных уведомлений «создайте свою анкету»:
 ```bash
-./yii rabbit:consume-profile-prompt
+./yii rabbit:consume-profile-prompt 123
+```
+3) Консьюмер подготовленных пуш-сообщений:
+```bash
+./yii rabbit:consume-pushes 123
 ```
 
 ### Как сервис обрабатывает события
@@ -136,21 +159,21 @@ export DB_PASS=""
 ```
 
 ### Отправка сообщений в Telegram
-Сервис `TelegramApi` делает HTTP-запросы в Telegram Bot API напрямую. Базовый URL и токен берутся из env/params. 
+Сервис `TelegramApi` делает HTTP-запросы в Telegram Bot API напрямую. Токен выбирается автоматически на основе текущего `bot_id` из конфигурации `params['telegram']['bots']`. Если токен для конкретного `bot_id` не найден, используется значение по умолчанию из `params['telegram']['token']` (или ENV `TELEGRAM_BOT_TOKEN`).
 Поддерживаются `sendMessage` и `sendPhoto`, inline-клавиатуры и внешние ссылки.
 
 ### Логирование ошибок в Telegram
 - Цель `App\Infrastructure\Logging\TelegramLogTarget` отправляет записи в Telegram. По умолчанию подключены уровни: `error|critical|alert|emergency` (и могут включать `warning/notice`, см. код цели).
 - Цель включается автоматически, если задан `TELEGRAM_LOG_CHAT_ID` (среда `APP_ENV` значения не ограничивает отправку).
-- Для логов используется отдельный токен, если указан `TELEGRAM_BOT_TOKEN_LOG` (или `TELEGRAM_LOG_BOT_TOKEN`). Иначе используется основной `TELEGRAM_BOT_TOKEN`.
-- Настройка:
-  1) В `.env`:
-     ```bash
-     TELEGRAM_BOT_TOKEN=123456:ABCDEF              # основной бот
-     TELEGRAM_BOT_TOKEN_LOG=987654:ZYXWV           # отдельный лог-бот (опционально)
-     TELEGRAM_LOG_CHAT_ID=123456789                # чат для логов
-     APP_ENV=prod                                  # опционально
-     ```
+- Для логов используется токен текущего бота или отдельный токен, если указан `log_bot_token` (ENV `TELEGRAM_LOG_BOT_TOKEN`).
+- Настройка в `params-local.php`:
+  ```php
+  'telegram' => [
+      'bots' => [...],
+      'log_chat_id' => '123456789',
+      'log_bot_token' => '...', // Опционально
+  ],
+  ```
   2) Убедитесь, что лог‑бот имеет право писать в указанный чат (для групп/каналов добавьте бота и выдайте права).
   3) Ошибки сервиса будут дублироваться в указанный чат. Для быстрого теста можно временно залогировать `logger->error('TEST')`.
 
@@ -159,15 +182,15 @@ export DB_PASS=""
 - Если язык пользователя не поддерживается, используется английский.
 
 ### Быстрый старт (локально)
-1. Настройте `.env` (или экспортируйте переменные окружения): `TELEGRAM_BOT_TOKEN`, `DB_*`, `RABBITMQ_*`.
-   - Для телеграм‑логов добавьте: `TELEGRAM_LOG_CHAT_ID` и, при наличии, `TELEGRAM_BOT_TOKEN_LOG`.
+1. Настройте `config/common/params-local.php` (база, RabbitMQ, токены ботов).
 2. `composer install && composer dump-autoload`
-3. `./yii migrate:up`
-4. `./yii app:setup`
-5. Запустите консьюмеры в отдельных терминалах:
-   - `./yii rabbit:consume-updates`
-   - `./yii rabbit:consume-profile-prompt`
-6. Настройте ваш внешний вебхук Telegram, чтобы он клал апдейты в очередь `tg_got_data` в формате выше.
+3. Примените миграции для нужных ботов: `BOT_ID=123 ./yii migrate:up`
+4. Настройте топологию: `./yii app:setup 123`
+5. Запустите консьюмеры для каждого бота в отдельных терминалах:
+   - `./yii rabbit:consume-updates 123`
+   - `./yii rabbit:consume-profile-prompt 123`
+   - `./yii rabbit:consume-pushes 123`
+6. Настройте ваш внешний вебхук Telegram, чтобы он клал апдейты в очередь `tg_got_data` соответствующего vhost (имя vhost = `bot_id`).
 
 ### Docker
 В репозитории есть `docker/Dockerfile` на базе `dunglas/frankenphp`. 
@@ -188,15 +211,27 @@ docker build -t dating-bot-php -f docker/Dockerfile .
 обменник `tg.direct` с routing key `tg.profile_prompt`.
 
 ### Ночной скрипт очистки дедупликации
-Чтобы таблица `telegram_processed_updates` не разрасталась бесконечно, предусмотрена команда очистки:
+Чтобы таблицы `telegram_processed_updates` не разрастались бесконечно, предусмотрена команда очистки для каждого бота:
 ```bash
-./yii tg:cleanup-processed-updates --days=2
+./yii tg:cleanup-processed-updates 123 --days=2
 ```
 По умолчанию хранится 2 суток (можно изменить через опцию `--days`).
 
-Пример cron (каждую ночь в 03:30):
+### Сброс дневных лимитов пушей
+Для корректной работы лимита пушей (например, 3 сообщения в день) нужно каждую полночь сбрасывать счетчики:
+```bash
+./yii push:reset-daily-counter 123
 ```
-30 3 * * * /usr/bin/php /path/to/project/yii tg:cleanup-processed-updates --days=2 >> /var/log/tg_cleanup.log 2>&1
+
+Пример cron (каждую ночь в 03:30 и 00:01):
+```
+# Очистка дедупликации
+30 3 * * * /usr/bin/php /path/to/project/yii tg:cleanup-processed-updates 123 --days=2 >> /var/log/tg_cleanup_123.log 2>&1
+30 3 * * * /usr/bin/php /path/to/project/yii tg:cleanup-processed-updates 456 --days=2 >> /var/log/tg_cleanup_456.log 2>&1
+
+# Сброс счетчиков пушей
+01 0 * * * /usr/bin/php /path/to/project/yii push:reset-daily-counter 123 >> /var/log/push_reset_123.log 2>&1
+01 0 * * * /usr/bin/php /path/to/project/yii push:reset-daily-counter 456 >> /var/log/push_reset_456.log 2>&1
 ```
 
 ### Примечание
