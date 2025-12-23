@@ -8,6 +8,7 @@ use App\Infrastructure\I18n\Localizer;
 use App\Infrastructure\RabbitMQ\RabbitMqService;
 use App\Infrastructure\Telegram\TelegramApi;
 use App\Telegram\Handlers\BrowseProfilesHandler;
+use App\Telegram\KeyboardFactory;
 use App\User\UserRepository;
 use Psr\Log\LoggerInterface;
 
@@ -20,6 +21,7 @@ final class PreferenceHandler
         private readonly TelegramApi $tg,
         private readonly BrowseProfilesHandler $browse,
         private readonly LoggerInterface $logger,
+        private readonly KeyboardFactory $kb,
     ) {
     }
 
@@ -49,8 +51,13 @@ final class PreferenceHandler
             'chat_id' => $chatId,
         ], 15 * 60 * 1000);
 
+        $lang = $this->users->getLanguage($chatId) ?? 'en';
+        $ageText = $this->t->t('age_selection.text', $lang);
+        $ageKb = $this->kb->ageSelection($lang);
+        $this->tg->sendMessage($chatId, $ageText, $ageKb);
+
         // Immediately send a profile card according to the new preference
-        $this->browse->sendNext($update);
+//        $this->browse->sendNext($update);
 
         $this->logger->info('Set preference and scheduled profile prompt', ['user' => $chatId, 'pref' => $lookingFor]);
     }
