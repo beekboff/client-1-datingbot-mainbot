@@ -81,12 +81,15 @@ return [
 
     // UserRepository will be auto-wired with ConnectionInterface
 
-    AppOptions::class => [
-        '__construct()' => [
-            'profileCreateUrl' => $params['app']['profileCreateUrl'] ?? 'https://example.com/profile/create',
-            'publicBaseUrl' => $params['app']['publicBaseUrl'] ?? 'https://example.com',
-        ],
-    ],
+    AppOptions::class => static function (BotContext $botContext) use ($params) {
+        $profileCreateUrl = $params['app']['profileCreateUrl'] ?? 'https://example.com/profile/create';
+        $botId = $botContext->getBotId();
+        if ($botId !== null && isset($params['telegram']['bots'][$botId]['profile_create_url'])) {
+            $profileCreateUrl = (string)$params['telegram']['bots'][$botId]['profile_create_url'];
+        }
+        $publicBaseUrl = $params['app']['publicBaseUrl'] ?? 'https://example.com';
+        return new AppOptions($profileCreateUrl, $publicBaseUrl);
+    },
 
     RabbitMqService::class => [
         '__construct()' => [

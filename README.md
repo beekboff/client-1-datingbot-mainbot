@@ -35,6 +35,7 @@ return [
         'bots' => [
             '123' => [
                 'token' => '123456:ABC...',
+                'profile_create_url' => 'https://...', // Опционально: свой URL для каждого бота
             ],
             '456' => [
                 'token' => '456789:XYZ...',
@@ -53,7 +54,7 @@ return [
 - `APP_ENV` (`dev`/`prod`)
 - `BOT_ID` — можно задать глобально через ENV, если запускается только один бот.
 
-URL для создания анкеты настраивается в `config/common/params.php` → `app.profileCreateUrl`.
+URL для создания анкеты настраивается в `config/common/params.php` → `app.profileCreateUrl`. Его также можно переопределить для каждого бота отдельно в секции `telegram['bots'][$bot_id]['profile_create_url']`.
 
 ### Установка
 ```bash

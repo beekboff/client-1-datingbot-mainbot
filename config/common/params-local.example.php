@@ -26,9 +26,11 @@ return [
         'bots' => [
             '123' => [
                 'token' => '123456:ABCDEF...',
+                'profile_create_url' => 'https://www.znakomstva-chat-bot.com/custom-url-for-123',
             ],
             // '456' => [
             //     'token' => '...',
+            //     'profile_create_url' => '...',
             // ],
         ],
         'base_url' => 'https://api.telegram.org',
