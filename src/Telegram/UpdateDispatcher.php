@@ -119,11 +119,13 @@ final class UpdateDispatcher
                         return;
                     }
                     if ($action === 'set_age_group') {
-                        $lang = $this->users->getLanguage($chatId) ?? 'en';
-                        $text = $this->t->t('subscription.text', $lang);
-                        $kb = $this->kb->subscription($lang);
-                        $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/subscribe_ru.jpg';
-                        $this->tg->sendPhoto($chatId, $photoUrl, $text, $kb);
+                        $this->browse->sendNext($tgUpdate);
+
+//                        $lang = $this->users->getLanguage($chatId) ?? 'en';
+//                        $text = $this->t->t('subscription.text', $lang);
+//                        $kb = $this->kb->subscription($lang);
+//                        $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/subscribe_ru.jpg';
+//                        $this->tg->sendPhoto($chatId, $photoUrl, $text, $kb);
                         return;
                     }
                     if ($action === 'browse_profiles' || $action === 'like_profile' || $action === 'dislike_profile') {
