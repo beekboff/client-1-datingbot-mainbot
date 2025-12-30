@@ -8,6 +8,7 @@ use App\Infrastructure\I18n\Localizer;
 use App\Infrastructure\RabbitMQ\RabbitMqService;
 use App\Infrastructure\Telegram\TelegramApi;
 use App\Shared\AppOptions;
+use App\Shared\BotContext;
 use App\Telegram\Handlers\BrowseProfilesHandler;
 use App\Telegram\KeyboardFactory;
 use App\User\UserRepository;
@@ -24,6 +25,7 @@ final class PreferenceHandler
         private readonly LoggerInterface $logger,
         private readonly KeyboardFactory $kb,
         private readonly AppOptions $opts,
+        private readonly BotContext $botContext
     ) {
     }
 
@@ -53,11 +55,18 @@ final class PreferenceHandler
             'chat_id' => $chatId,
         ], 15 * 60 * 1000);
 
-        $lang = $this->users->getLanguage($chatId) ?? 'en';
-        $ageText = $this->t->t('age_selection.text', $lang);
-        $ageKb = $this->kb->ageSelection($lang);
-        $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/age_ru.jpg';
-        $this->tg->sendPhoto($chatId, $photoUrl, $ageText, $ageKb);
+
+        $botId = $this->botContext->getBotId();
+        if ($botId == 8521836802) {
+            $lang = $this->users->getLanguage($chatId) ?? 'en';
+            $ageText = $this->t->t('age_selection.text', $lang);
+            $ageKb = $this->kb->ageSelection($lang);
+            $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/age_ru.jpg';
+            $this->tg->sendPhoto($chatId, $photoUrl, $ageText, $ageKb);
+        } else {
+            $this->browse->sendNext($update);
+        }
+
 
         // Immediately send a profile card according to the new preference
 //        $this->browse->sendNext($update);

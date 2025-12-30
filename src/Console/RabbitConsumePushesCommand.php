@@ -38,6 +38,7 @@ final class RabbitConsumePushesCommand extends BaseRabbitConsumeCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        set_time_limit(30);
         $botId = (string)$input->getArgument('bot_id');
         $this->botContext->setBotId($botId);
 
