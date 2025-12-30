@@ -57,7 +57,7 @@ final class PreferenceHandler
 
 
         $botId = $this->botContext->getBotId();
-        if ($botId == 8521836802) {
+        if ($botId != 8521836802) {
             $lang = $this->users->getLanguage($chatId) ?? 'en';
             $ageText = $this->t->t('age_selection.text', $lang);
             $ageKb = $this->kb->ageSelection($lang);
