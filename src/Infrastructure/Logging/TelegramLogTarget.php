@@ -39,6 +39,8 @@ final class TelegramLogTarget extends Target
 
         // Disable in non-prod environments
         $this->setEnabled(fn () =>  !empty($this->chatId)); // $this->environment === 'prod' &&
+
+        $this->telegram->log = true;
     }
 
     protected function export(): void

@@ -10,6 +10,9 @@ use Psr\Log\LoggerInterface;
 
 final class TelegramApi
 {
+
+    public bool $log = false;
+
     /**
      * @param array<string, string> $botTokens Map of bot_id => token
      */
@@ -81,6 +84,9 @@ final class TelegramApi
 
     private function getToken(): string
     {
+        if ($this->log) {
+            return $this->defaultToken;
+        }
         $botId = $this->botContext->getBotId();
         if ($botId !== null && isset($this->botTokens[$botId])) {
             return $this->botTokens[$botId];
