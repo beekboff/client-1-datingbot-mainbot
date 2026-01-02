@@ -118,6 +118,9 @@ final class TelegramApi
                 $this->logger->error('Telegram API error on {method}: {body}', ['method' => $method, 'body' => $body]);
             }
         } catch (\Throwable $e) {
+            if ($resp->getStatusCode() === 403) {
+                return;
+            }
             $this->logger->error('Telegram API exception on {method}: {error}; {payload}', ['method' => $method, 'error' => $e->getMessage(), 'payload' => $payload]);
         }
     }
