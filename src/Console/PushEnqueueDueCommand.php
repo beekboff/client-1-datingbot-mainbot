@@ -85,8 +85,14 @@ final class PushEnqueueDueCommand extends Command
                         continue; // cap reached or not enough time passed
                     }
 
+                    if ($row['looking_for']) {
+                        $pref=$row['looking_for'];
+                    } else {
+                        $pref = 'woman';
+                    }
+
                     // determine preference
-                    $pref = $this->users->getPreference($userId);
+//                    $pref = $this->users->getPreference($userId);
                     if ($pref !== 'woman' && $pref !== 'man') {
                         // Ask for preference if not set
                         $text = $this->t->t('find_whom.text', $lang);
@@ -134,6 +140,8 @@ final class PushEnqueueDueCommand extends Command
                     $this->profiles->markShown($userId, (int)$profile['id']);
                     $enqueued++;
                 }
+
+                sleep(1);
             }
 
             $output->writeln(sprintf('<info>Enqueued %d push messages.</info>', $enqueued));

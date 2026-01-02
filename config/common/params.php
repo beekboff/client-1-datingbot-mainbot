@@ -35,5 +35,5 @@ return [
         // Public base URL of this bot service (used to compose image URLs for profiles in /storage)
         'publicBaseUrl' => 'https://back.znakomstva-chat.com',
     ],
-    'APP_ENV' => 'dev'
+    'APP_ENV' => 'prod'
 ];

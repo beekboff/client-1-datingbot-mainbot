@@ -97,7 +97,7 @@ final class UserRepository
         $threshold = $now->modify('-1 hour')->format('Y-m-d H:i:s');
         $rows = (new Query($this->db))
             ->from('users')
-            ->select(['user_id', 'language'])
+            ->select(['user_id', 'language', 'looking_for'])
             ->where(['status' => 1])
             ->andWhere(['<', 'daily_push_count', 5])
             ->andWhere(['or', ['IS', 'last_push', null], ['<=', 'last_push', $threshold]])

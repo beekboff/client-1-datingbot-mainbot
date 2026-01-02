@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Telegram\Handlers;
 
 use App\Infrastructure\I18n\Localizer;
+use App\Infrastructure\RabbitMQ\RabbitMqService;
 use App\Infrastructure\Telegram\TelegramApi;
 use App\Shared\AppOptions;
 use App\Telegram\KeyboardFactory;
@@ -18,6 +19,7 @@ final class StartHandler
         private readonly TelegramApi $tg,
         private readonly KeyboardFactory $kb,
         private readonly AppOptions $opts,
+        private readonly RabbitMqService $mq
     ) {
     }
 
@@ -44,5 +46,11 @@ final class StartHandler
         $kb = $this->kb->findWhom($lang);
         $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/find_whom_ru.jpg';
         $this->tg->sendPhoto($chatId, $photoUrl, $text, $kb);
+
+        // Schedule delayed profile prompt (15 minutes)
+        $this->mq->publishProfilePromptDelayed([
+            'action' => 'send_create_profile',
+            'chat_id' => $chatId,
+        ], 15 * 60 * 1000);
     }
 }

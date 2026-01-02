@@ -49,11 +49,11 @@ final class PreferenceHandler
         // Persist preference
         $this->users->setPreference($chatId, $lookingFor);
 
-        // Schedule delayed profile prompt (15 minutes)
-        $this->mq->publishProfilePromptDelayed([
-            'action' => 'send_create_profile',
-            'chat_id' => $chatId,
-        ], 15 * 60 * 1000);
+//        // Schedule delayed profile prompt (15 minutes)
+//        $this->mq->publishProfilePromptDelayed([
+//            'action' => 'send_create_profile',
+//            'chat_id' => $chatId,
+//        ], 15 * 60 * 1000);
 
 
         $botId = $this->botContext->getBotId();
