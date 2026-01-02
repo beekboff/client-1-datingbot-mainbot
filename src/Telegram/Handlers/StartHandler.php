@@ -45,7 +45,8 @@ final class StartHandler
         $text = $this->t->t('find_whom.text', $lang);
         $kb = $this->kb->findWhom($lang);
         $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/find_whom_ru.jpg';
-        $this->tg->sendPhoto($chatId, $photoUrl, $text, $kb);
+//        $this->tg->sendPhoto($chatId, $photoUrl, $text, $kb);
+        $this->tg->sendMessage($chatId, $text, $kb);
 
         // Schedule delayed profile prompt (15 minutes)
         $this->mq->publishProfilePromptDelayed([
