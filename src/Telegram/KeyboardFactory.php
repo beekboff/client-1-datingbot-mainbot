@@ -14,6 +14,23 @@ final class KeyboardFactory
     {
     }
 
+    public function push(string $lang): array
+    {
+
+        $base = $this->opts->profileCreateUrl;
+        $connectUrl = $base; //  'https://tlin.cc/i/xw26z1/url_dating/' . $userId. '?url=' . urlencode($base); ;// . (str_contains($base, '?') ? '&' : '?') . 'pid=' . urlencode((string)$profileId);
+        $btnConnect = TelegramApi::urlButton($this->t->t('profile.buttons.connect', $lang), $connectUrl);
+
+        $btnContinue = TelegramApi::callbackButton($this->t->t('subscription.buttons.continue', $lang), [
+            'action' => 'browse_profiles',
+            'data' => new \stdClass(),
+        ]);
+        return TelegramApi::inlineKeyboard([
+            [$btnConnect],
+            [$btnContinue]
+        ]);
+    }
+
     public function findWhom(string $lang): array
     {
         $btnWoman = TelegramApi::callbackButton($this->t->t('find_whom.buttons.woman', $lang), [

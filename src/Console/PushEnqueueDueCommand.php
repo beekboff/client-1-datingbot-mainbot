@@ -95,15 +95,20 @@ final class PushEnqueueDueCommand extends Command
 //                    $pref = $this->users->getPreference($userId);
                     if ($pref !== 'woman' && $pref !== 'man') {
                         // Ask for preference if not set
-                        $text = $this->t->t('find_whom.text', $lang);
-                        $markup = $this->kb->findWhom($lang);
+
+                        $markup = $this->kb->push($lang);
+
+
+
+//                        $text = $this->t->t('find_whom.text', $lang);
+//                        $markup = $this->kb->findWhom($lang);
                         $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/find_whom_ru.jpg';
                         $payload = [
                             'method' => 'sendPhoto',
                             'args' => [
                                 'chat_id' => $userId,
                                 'photo' => $photoUrl,
-                                'caption' => $text,
+//                                'caption' => $text,
                                 'reply_markup' => $markup,
                             ],
                         ];
