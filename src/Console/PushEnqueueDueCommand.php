@@ -93,29 +93,29 @@ final class PushEnqueueDueCommand extends Command
 
                     // determine preference
 //                    $pref = $this->users->getPreference($userId);
-                    if ($pref !== 'woman' && $pref !== 'man') {
-                        // Ask for preference if not set
-
-                        $markup = $this->kb->push($lang);
-
-
-
-//                        $text = $this->t->t('find_whom.text', $lang);
-//                        $markup = $this->kb->findWhom($lang);
-                        $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/find_whom_ru.jpg';
-                        $payload = [
-                            'method' => 'sendPhoto',
-                            'args' => [
-                                'chat_id' => $userId,
-                                'photo' => $photoUrl,
-//                                'caption' => $text,
-                                'reply_markup' => $markup,
-                            ],
-                        ];
-                        $this->mq->publishPush($payload);
-                        $enqueued++;
-                        continue;
-                    }
+//                    if ($pref !== 'woman' && $pref !== 'man') {
+//                        // Ask for preference if not set
+//
+//                        $markup = $this->kb->push($lang);
+//
+//
+//
+////                        $text = $this->t->t('find_whom.text', $lang);
+////                        $markup = $this->kb->findWhom($lang);
+//                        $photoUrl = rtrim($this->opts->publicBaseUrl, '/') . '/storage/find_whom_ru.jpg';
+//                        $payload = [
+//                            'method' => 'sendPhoto',
+//                            'args' => [
+//                                'chat_id' => $userId,
+//                                'photo' => $photoUrl,
+////                                'caption' => $text,
+//                                'reply_markup' => $markup,
+//                            ],
+//                        ];
+//                        $this->mq->publishPush($payload);
+//                        $enqueued++;
+//                        continue;
+//                    }
 
                     // pick a random profile unseen by user
                     $profile = $this->profiles->getRandomUnseenByGender($userId, $pref);
@@ -131,7 +131,7 @@ final class PushEnqueueDueCommand extends Command
                     $photoUrl = $this->buildPublicPhotoUrl($profile['gender'], $profile['file']);
 //                    $markup = $this->kb->profileCard($lang, (int)$profile['id'], $userId);
 
-                    $markup = $this->kb->push($lang);
+                    $markup = $this->kb->push($lang, (int)$profile['id'], $userId);
 
                     $payload = [
                         'method' => 'sendPhoto',
