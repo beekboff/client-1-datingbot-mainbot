@@ -14,7 +14,7 @@ final class KeyboardFactory
     {
     }
 
-    public function push(string $lang): array
+    public function push(string $lang, int $profileId, int $userId): array
     {
 
         $base = $this->opts->profileCreateUrl;
@@ -25,6 +25,7 @@ final class KeyboardFactory
             'action' => 'browse_profiles',
             'data' => new \stdClass(),
         ]);
+
         return TelegramApi::inlineKeyboard([
             [$btnConnect],
             [$btnContinue]
