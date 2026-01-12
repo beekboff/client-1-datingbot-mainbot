@@ -12,6 +12,7 @@ use App\Shared\BotContext;
 use App\Telegram\KeyboardFactory;
 use App\User\UserRepository;
 use DateTimeImmutable;
+use Yiisoft\Db\Connection\ConnectionInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,6 +33,7 @@ final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
         private readonly KeyboardFactory $kb,
         private readonly UserRepository $users,
         private readonly BotContext $botContext,
+        private readonly ConnectionInterface $db,
     ) {
         parent::__construct();
     }
@@ -51,8 +53,15 @@ final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
         $output->writeln("<info>Consuming delayed profile prompts for bot {$botId}...</info>");
         $this->mq->ensureTopology();
 
+        $this->db->close();
+        $lastDbActivity = time();
+
         $this->mq->consumeProfilePrompt(
-            function (array $payload): void {
+            function (array $payload) use (&$lastDbActivity): void {
+                if (time() - $lastDbActivity > 60) {
+                    $this->db->close();
+                }
+
                 $action = (string)($payload['action'] ?? '');
                 if ($action !== 'send_create_profile') {
                     return;
@@ -66,6 +75,7 @@ final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
                 $markup = $this->kb->createProfile($lang, $chatId);
                 $this->tg->sendMessage($chatId, $text, $markup);
                 $this->users->updateLastPush($chatId, new DateTimeImmutable());
+                $lastDbActivity = time();
             },
             $this->getMemoryLimit($input),
             $this->getMessagesLimit($input)
