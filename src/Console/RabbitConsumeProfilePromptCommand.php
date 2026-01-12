@@ -53,9 +53,13 @@ final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
         $output->writeln("<info>Consuming delayed profile prompts for bot {$botId}...</info>");
         $this->mq->ensureTopology();
 
+        $lastDbActivity = time();
+
         $this->mq->consumeProfilePrompt(
-            function (array $payload): void {
-                $this->db->close();
+            function (array $payload) use (&$lastDbActivity): void {
+                if (time() - $lastDbActivity > 60) {
+                    $this->db->close();
+                }
 
                 $action = (string)($payload['action'] ?? '');
                 if ($action !== 'send_create_profile') {
@@ -70,6 +74,7 @@ final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
                 $markup = $this->kb->createProfile($lang, $chatId);
                 $this->tg->sendMessage($chatId, $text, $markup);
                 $this->users->updateLastPush($chatId, new DateTimeImmutable());
+                $lastDbActivity = time();
             },
             $this->getMemoryLimit($input),
             $this->getMessagesLimit($input)

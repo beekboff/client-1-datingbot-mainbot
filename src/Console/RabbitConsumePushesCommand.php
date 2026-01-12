@@ -47,9 +47,13 @@ final class RabbitConsumePushesCommand extends BaseRabbitConsumeCommand
         $output->writeln("<info>Consuming pushes from queue tg.pushes for bot {$botId}...</info>");
         $this->mq->ensureTopology();
 
+        $lastDbActivity = time();
+
         $this->mq->consumePushes(
-            function (array $payload): void {
-                $this->db->close();
+            function (array $payload) use (&$lastDbActivity): void {
+                if (time() - $lastDbActivity > 60) {
+                    $this->db->close();
+                }
 
                 $method = (string)($payload['method'] ?? '');
                 $args = (array)($payload['args'] ?? []);
@@ -79,6 +83,7 @@ final class RabbitConsumePushesCommand extends BaseRabbitConsumeCommand
 
                 // Mark last_push after sending
                 $this->users->updateLastPush($chatId, new DateTimeImmutable());
+                $lastDbActivity = time();
             },
             $this->getMemoryLimit($input),
             $this->getMessagesLimit($input)

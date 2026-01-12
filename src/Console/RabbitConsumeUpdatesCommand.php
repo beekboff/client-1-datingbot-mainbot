@@ -43,10 +43,16 @@ final class RabbitConsumeUpdatesCommand extends BaseRabbitConsumeCommand
 
         $output->writeln("<info>Consuming updates from queue tg_got_data for bot {$botId}...</info>");
         $this->mq->ensureTopology();
+
+        $lastDbActivity = time();
+
         $this->mq->consumeUpdates(
-            function (array $payload): void {
-                $this->db->close();
+            function (array $payload) use (&$lastDbActivity): void {
+                if (time() - $lastDbActivity > 60) {
+                    $this->db->close();
+                }
                 $this->dispatcher->dispatch($payload);
+                $lastDbActivity = time();
             },
             $this->getMemoryLimit($input),
             $this->getMessagesLimit($input)
