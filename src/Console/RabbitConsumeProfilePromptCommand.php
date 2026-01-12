@@ -53,6 +53,7 @@ final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
         $output->writeln("<info>Consuming delayed profile prompts for bot {$botId}...</info>");
         $this->mq->ensureTopology();
 
+        $this->db->close();
         $lastDbActivity = time();
 
         $this->mq->consumeProfilePrompt(

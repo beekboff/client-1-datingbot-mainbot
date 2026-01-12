@@ -44,6 +44,7 @@ final class RabbitConsumeUpdatesCommand extends BaseRabbitConsumeCommand
         $output->writeln("<info>Consuming updates from queue tg_got_data for bot {$botId}...</info>");
         $this->mq->ensureTopology();
 
+        $this->db->close();
         $lastDbActivity = time();
 
         $this->mq->consumeUpdates(

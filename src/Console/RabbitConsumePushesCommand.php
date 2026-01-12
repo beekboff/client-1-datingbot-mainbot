@@ -47,6 +47,7 @@ final class RabbitConsumePushesCommand extends BaseRabbitConsumeCommand
         $output->writeln("<info>Consuming pushes from queue tg.pushes for bot {$botId}...</info>");
         $this->mq->ensureTopology();
 
+        $this->db->close();
         $lastDbActivity = time();
 
         $this->mq->consumePushes(
