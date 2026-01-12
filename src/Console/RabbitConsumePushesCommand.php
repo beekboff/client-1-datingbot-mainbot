@@ -9,6 +9,7 @@ use App\Infrastructure\Telegram\TelegramApi;
 use App\Shared\BotContext;
 use App\User\UserRepository;
 use DateTimeImmutable;
+use Yiisoft\Db\Connection\ConnectionInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -26,6 +27,7 @@ final class RabbitConsumePushesCommand extends BaseRabbitConsumeCommand
         private readonly TelegramApi $tg,
         private readonly UserRepository $users,
         private readonly BotContext $botContext,
+        private readonly ConnectionInterface $db,
     ) {
         parent::__construct();
     }
@@ -47,6 +49,8 @@ final class RabbitConsumePushesCommand extends BaseRabbitConsumeCommand
 
         $this->mq->consumePushes(
             function (array $payload): void {
+                $this->db->close();
+
                 $method = (string)($payload['method'] ?? '');
                 $args = (array)($payload['args'] ?? []);
                 $chatId = (int)($args['chat_id'] ?? 0);

@@ -7,6 +7,7 @@ namespace App\Console;
 use App\Infrastructure\RabbitMQ\RabbitMqService;
 use App\Shared\BotContext;
 use App\Telegram\UpdateDispatcher;
+use Yiisoft\Db\Connection\ConnectionInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,6 +24,7 @@ final class RabbitConsumeUpdatesCommand extends BaseRabbitConsumeCommand
         private readonly RabbitMqService $mq,
         private readonly UpdateDispatcher $dispatcher,
         private readonly BotContext $botContext,
+        private readonly ConnectionInterface $db,
     ) {
         parent::__construct();
     }
@@ -43,6 +45,7 @@ final class RabbitConsumeUpdatesCommand extends BaseRabbitConsumeCommand
         $this->mq->ensureTopology();
         $this->mq->consumeUpdates(
             function (array $payload): void {
+                $this->db->close();
                 $this->dispatcher->dispatch($payload);
             },
             $this->getMemoryLimit($input),

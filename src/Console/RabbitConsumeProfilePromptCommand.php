@@ -12,6 +12,7 @@ use App\Shared\BotContext;
 use App\Telegram\KeyboardFactory;
 use App\User\UserRepository;
 use DateTimeImmutable;
+use Yiisoft\Db\Connection\ConnectionInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,6 +33,7 @@ final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
         private readonly KeyboardFactory $kb,
         private readonly UserRepository $users,
         private readonly BotContext $botContext,
+        private readonly ConnectionInterface $db,
     ) {
         parent::__construct();
     }
@@ -53,6 +55,8 @@ final class RabbitConsumeProfilePromptCommand extends BaseRabbitConsumeCommand
 
         $this->mq->consumeProfilePrompt(
             function (array $payload): void {
+                $this->db->close();
+
                 $action = (string)($payload['action'] ?? '');
                 if ($action !== 'send_create_profile') {
                     return;
